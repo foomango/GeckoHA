@@ -1,0 +1,107 @@
+#!/bin/bash
+HAPATH="/root/src/ha"
+HA863CFG="/root/domu/ha863/remus/ha863.conf"
+PROG="hustha"
+DOMAIN="ha863"
+DEST="hp2"
+
+function state {
+
+    state=$(xm list $DOMAIN | awk 'NR==2{print $5}')
+    case $state in
+        "r-----" | "-b----")
+            echo "run"
+            ;;
+
+        "--p---") 
+            echo "pause"
+            ;;
+        "---s--" | "----c-" | "-----d")
+            echo "wait"
+            ;;
+
+        *)
+            echo "unknown"
+            ;;
+    esac
+}
+
+function startvm {
+    status=$(state)
+
+    if [ $status != "unknown" ]; then 
+        echo fail
+    else 
+        xm create $HA863CFG >/dev/null 2>&1
+    fi
+
+    status=$(state)
+    if [ $status != "run" ]; then 
+        echo fail
+    else 
+        echo success
+    fi
+}
+
+function destroyvm {
+    xm destroy $DOMAIN >/dev/null 2>&1
+
+    status=$(state)
+    if [ $status != "unknown" ]; then 
+        echo fail
+    else 
+        echo success
+    fi
+}
+
+function stopha {
+    $destroyvm
+}
+
+function startha {
+    status=$(state)
+    if [ $status != "run" ]; then 
+        echo fail
+        return
+    fi
+    
+    remus $DOMAIN $DEST >/dev/null 2>&1 & 
+    sleep 1
+
+    ps $! >/dev/null 2>&1
+    if [ "$?" != "0" ]; then 
+        echo fail
+    else 
+        echo success
+    fi
+}
+
+function usage {
+    echo "Usage: $PROG <subcommand> [args]"
+}
+
+if [ "$#" -lt "1" ]; then 
+    usage
+    exit -1
+fi
+
+case $1 in 
+    "startvm") 
+        startvm
+        ;;
+    "destroyvm") 
+        destroyvm
+        ;;
+    "startha") 
+        startha
+        ;;
+    "stopha") 
+        stopha
+        ;;
+    "state") 
+        state
+        ;;
+    *)
+        usage
+        ;;
+esac
