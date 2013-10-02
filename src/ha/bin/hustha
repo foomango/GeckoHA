@@ -7,7 +7,7 @@ DEST="hp2"
 
 function state {
 
-    state=$(xm list $DOMAIN | awk 'NR==2{print $5}')
+    state=$(xm list $DOMAIN 2>/dev/null | awk 'NR==2{print $5}')
     case $state in
         "r-----" | "-b----")
             echo "run"
@@ -55,7 +55,7 @@ function destroyvm {
 }
 
 function stopha {
-    $destroyvm
+    destroyvm
 }
 
 function startha {
