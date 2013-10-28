@@ -21,7 +21,7 @@ function state {
             ;;
 
         *)
-            echo "unknown"
+            echo "stop"
             ;;
     esac
 }
@@ -29,7 +29,7 @@ function state {
 function startvm {
     status=$(state)
 
-    if [ $status != "unknown" ]; then 
+    if [ $status != "stop" ]; then 
         echo fail
     else 
         xm create $HA863CFG >/dev/null 2>&1
@@ -47,7 +47,7 @@ function destroyvm {
     xm destroy $DOMAIN >/dev/null 2>&1
 
     status=$(state)
-    if [ $status != "unknown" ]; then 
+    if [ $status != "stop" ]; then 
         echo fail
     else 
         echo success
@@ -65,7 +65,7 @@ function startha {
         return
     fi
     
-    remus $DOMAIN $DEST >/dev/null 2>&1 & 
+    remus -i 50 $DOMAIN $DEST >/dev/null 2>&1 & 
     sleep 1
 
     ps $! >/dev/null 2>&1
